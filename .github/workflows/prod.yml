@@ -43,14 +43,12 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.prep.outputs.tags }}
       - name: Deploy image to cluster
-        pre: echo ::save-state name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
         if: ${{ github.event_name != "push" }}
         uses: actions-hub/kubectl@master
         env:
           KUBE_CONFIG: ${{ secrets.KUBECTL }}
-          TAG: ${ GITHUB_SHA::6 }
         with:
-          args: set image deployment/api-docs api-docs=kzdv/api-docs:${{ env.TAG }} -n prod
+          args: set image deployment/api-docs api-docs=kzdv/api-docs:${{ steps.prep.outputs.tags }} -n prod
       - name: Verify deployment
         if: ${{ github.event_name != "push" }}
         uses: actions-hub/kubectl@master
