@@ -32,4 +32,9 @@ jobs:
         env:
           KUBE_CONFIG: ${{ secrets.KUBECTL }}
           TAG: ${ GITHUB_SHA::6 }
-        run: kubectl set image deployment/api-docs api-docs=kzdv/api-docs:$TAG -n prod
+        with:
+          args: set image deployment/api-docs api-docs=kzdv/api-docs:${{ env.TAG }} -n prod
+      - name: Verify deployment
+        uses: actions-hub/kubectl@master
+        with:
+          args: rollout status deployment/api-docs
