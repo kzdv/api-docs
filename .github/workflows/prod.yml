@@ -1,9 +1,9 @@
 name: Build and Deploy Image
 
 on:
-  tags:
-    - "v*.*.*"
   push:
+    tags:
+      - "v*.*.*"
     branches: [ "master" ]
     
 jobs:
