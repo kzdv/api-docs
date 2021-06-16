@@ -31,6 +31,6 @@ jobs:
         uses: actions-hub/kubectl@master
         env:
           KUBE_CONFIG: ${{ secrets.KUBECTL }}
-          TAG: ${{ GITHUB_SHA::6 }}
+          TAG: ${ GITHUB_SHA::6 }
         with:
           args: set image deployment/api-docs api-docs=kzdv/api-docs:$TAG -n prod
