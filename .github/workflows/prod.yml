@@ -1,8 +1,8 @@
 name: Build and Deploy Image
 
 on:
-  release:
-    types: [published]
+  tags:
+    - "v*.*.*"
   push:
     branches: [ "master" ]
     
@@ -14,14 +14,34 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Build and publish
-        pre: echo ::save-state name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
-        uses: elgohr/Publish-Docker-Github-Action@master
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE=kzdv/api-docs
+          VERSION=dev
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            VERSION=nightly
+          fi
+          TAGS="${DOCKER_IMAGE}:${VERSION}"
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          fi
+          echo ::set-output name=tags::${TAGS}
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v1
         with:
-          name: kzdv/api-docs
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          no_push: ${{ github.event_name == "push" }}
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.prep.outputs.tags }}
       - name: Deploy image to cluster
         pre: echo ::save-state name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})
         if: ${{ github.event_name != "push" }}
